@@ -60,23 +60,33 @@ class SimulationEnvironment(
 
   private def crossover(parent1: Chromosome, parent2: Chromosome): Chromosome = {
     val positionRatio = randomiser.apply()
-    val index1 = Math.floor(positionRatio * parent1.genes.size).toInt
-    val index2 = Math.floor(positionRatio * parent2.genes.size).toInt
-    Chromosome(parent1.genes.slice(0, index1) ++ parent2.genes.slice(index2, parent2.genes.size))
+    if (positionRatio < 0.25) {
+      parent2
+    } else if (positionRatio < 0.5) {
+      Chromosome(parent1.xGene, parent2.yGene, parent2.radiusGene)
+    } else if (positionRatio < 0.75) {
+      Chromosome(parent1.xGene, parent1.yGene, parent2.radiusGene)
+    } else {
+      parent1
+    }
   }
 
   private def mutate(chromosome: Chromosome): Chromosome = {
-    Chromosome(chromosome.genes.map(g => mutate(0, g)))
+    Chromosome(
+      mutate(0, chromosome.xGene),
+      mutate(0, chromosome.yGene),
+      mutate(0, chromosome.radiusGene)
+    )
   }
 
   @tailrec
-  private def mutate(index: Int, gene: Gene): Gene = {
+  private def mutate[T <: Gene](index: Int, gene: T): T = {
     if (index >= gene.bitSize) {
       gene
     } else if (randomiser.apply() <= mutationRate) {
-      mutate(index + 1, gene.mutate(index))
+      mutate(index + 1, gene.mutate(index).asInstanceOf[T])
     } else {
-      mutate(index + 1, gene)
+      mutate(index + 1, gene.asInstanceOf[T])
     }
   }
 

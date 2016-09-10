@@ -3,8 +3,12 @@ package org.danielholmes.gacirc
 import scala.annotation.tailrec
 
 case class Surface(width: Int, height: Int, disks: Set[Disk]) {
-  require(disks.forall(d => d.leftX >= 0 && d.rightX <= width && d.topY >= 0 && d.bottomY <= height))
+  require(disks.forall(withinBounds))
   require(Surface.noOverlappingDisks(disks))
+
+  def withinBounds(disk: Disk): Boolean = {
+    disk.leftX >= 0 && disk.rightX <= width && disk.topY >= 0 && disk.bottomY <= height
+  }
 
   def anyOverlaps(disk: Disk): Boolean = {
     anyOverlaps(disk, disks.toList)
@@ -44,6 +48,28 @@ object Surface {
       case Nil => true
       case x :: xs =>
         (toCheck == x || !toCheck.overlaps(x)) && noOverlappingDisks(toCheck, xs)
+    }
+  }
+
+  def createRandom(width: Int, height: Int, numDisks: Int): Surface = {
+    createRandomDisks(Surface(width, height), numDisks)
+  }
+
+  @tailrec
+  private def createRandomDisks(current: Surface, num: Int): Surface = {
+    if (current.disks.size == num) {
+      current
+    } else {
+      createRandomDisks(createRandomDisk(current), num)
+    }
+  }
+
+  private def createRandomDisk(current: Surface): Surface = {
+    val possible = Disk.createRandomWithinBounds(current.width, current.height)
+    if (current.anyOverlaps(possible)) {
+      createRandomDisk(current)
+    } else {
+      Surface(current.width, current.height, current.disks + possible)
     }
   }
 }

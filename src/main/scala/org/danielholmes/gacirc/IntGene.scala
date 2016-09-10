@@ -1,5 +1,7 @@
 package org.danielholmes.gacirc
 
+import scala.annotation.tailrec
+
 case class IntGene(value: Int, bitSize: Int) extends Gene {
   require(toShortestBinaryString.length <= bitSize)
 
@@ -22,6 +24,20 @@ object IntGene {
   }
 
   def maxValueForBitSize(bitSize: Int): IntGene = {
-    IntGene(Math.pow(bitSize, 2).toInt - 1, bitSize)
+    IntGene(Math.pow(2, bitSize).toInt - 1, bitSize)
+  }
+
+  // Poor, todo: Find proper equation
+  def smallestBitSizeFor(value: Double): Int = {
+    smallestBitSizeFor(1, value)
+  }
+
+  @tailrec
+  private def smallestBitSizeFor(current: Int, value: Double): Int = {
+    if (Math.pow(2, current) > value) {
+      current
+    } else {
+      smallestBitSizeFor(current + 1, value)
+    }
   }
 }

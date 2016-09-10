@@ -40,4 +40,8 @@ class HalfIntGeneSpec extends FlatSpec with Matchers {
       HalfIntGene(0, 4).mutate(4)
     }
   }
+
+  it should "get max value for bitSize" in {
+    HalfIntGene.maxValueForBitSize(3) should be (HalfIntGene(3.5, 3))
+  }
 }

@@ -4,7 +4,8 @@ import org.scalatest._
 
 class SimulationEnvironmentSpec extends FlatSpec with Matchers {
   private def intGene(value: Int): IntGene = IntGene(value, 4)
-  
+  private def halfIntGene(value: Int): HalfIntGene = HalfIntGene(value, 4)
+
   "SimulationEnvironment" should "run empty population correctly" in {
     val s = SimulationState(Traversable.empty)
     new SimulationEnvironment(0.5, 0, (d) => 1, () => 0).runGeneration(s) should be (
@@ -13,7 +14,7 @@ class SimulationEnvironmentSpec extends FlatSpec with Matchers {
   }
 
   it should "run singleton population correctly" in {
-    val c1 = Chromosome(Seq(intGene(1)))
+    val c1 = Chromosome(halfIntGene(1), halfIntGene(2), intGene(3))
     val s = SimulationState(Traversable(c1))
     new SimulationEnvironment(0.5, 0, (d) => 1, () => 0).runGeneration(s) should be (
       GenerationResults(Traversable(ChromosomeResult(c1, 1)), SimulationState(Traversable(c1)))
@@ -21,8 +22,8 @@ class SimulationEnvironmentSpec extends FlatSpec with Matchers {
   }
 
   it should "reproduce multiple population correctly" in {
-    val c1 = Chromosome(Seq(intGene(1), intGene(2), intGene(3)))
-    val c2 = Chromosome(Seq(intGene(4), intGene(5), intGene(6)))
+    val c1 = Chromosome(halfIntGene(1), halfIntGene(2), intGene(3))
+    val c2 = Chromosome(halfIntGene(4), halfIntGene(5), intGene(6))
     val s = SimulationState(Traversable(c1, c2))
     val next = new SimulationEnvironment(1, 0, (d) => 2, () => 0.4).runGeneration(s)
     next.chromosomeResults should be (Traversable(ChromosomeResult(c1, 2), ChromosomeResult(c2, 2)))
@@ -31,14 +32,14 @@ class SimulationEnvironmentSpec extends FlatSpec with Matchers {
     // Got to be an easier way to do this assertion
     next.nextState.population.foreach({
       _ should (
-        be (Chromosome(Seq(intGene(1), intGene(5), intGene(6)))) or
-          be (Chromosome(Seq(intGene(4), intGene(2), intGene(3))))
+        be (Chromosome(halfIntGene(1), halfIntGene(5), intGene(6))) or
+          be (Chromosome(halfIntGene(4), halfIntGene(2), intGene(3)))
         )
     })
   }
 
   it should "mutate correctly" in {
-    val c = Chromosome(Seq(IntGene.maxValueForBitSize(4), IntGene.maxValueForBitSize(4), IntGene.maxValueForBitSize(4)))
+    val c = Chromosome(HalfIntGene.maxValueForBitSize(4), HalfIntGene.maxValueForBitSize(4), IntGene.maxValueForBitSize(4))
     val s = SimulationState(Traversable(c, c))
     val next = new SimulationEnvironment(1, 1, (d) => 2, () => 0).runGeneration(s)
     next.chromosomeResults should be (Traversable(ChromosomeResult(c, 2), ChromosomeResult(c, 2)))
@@ -46,7 +47,7 @@ class SimulationEnvironmentSpec extends FlatSpec with Matchers {
     // Our supplied randomiser and 100% mutation allows only 1 kind of mutated chromosome
     // Got to be an easier way to do this assertion
     next.nextState.population.foreach({
-      _ should be (Chromosome(Seq(IntGene(0, 4), IntGene(0, 4), IntGene(0, 4))))
+      _ should be (Chromosome(HalfIntGene(0, 4), HalfIntGene(0, 4), IntGene(0, 4)))
     })
   }
 }
