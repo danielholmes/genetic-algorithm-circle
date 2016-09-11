@@ -29,7 +29,7 @@ object App extends SimpleSwingApplication {
       val env = new SimulationEnvironment(
         config.crossoverRate,
         config.mutationRate,
-        new Fitness(config.surface, encoder).calculate,
+        new Fitness(config.surface, encoder),
         new Random().nextDouble
       )
       val runPanel = new RunPanel(

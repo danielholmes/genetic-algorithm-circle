@@ -5,19 +5,21 @@ import scala.annotation.tailrec
 class SimulationEnvironment(
   crossoverRate: Double,
   mutationRate: Double,
-  fitnessFunction: (Chromosome) => Double,
+  fitness: Fitness,
   randomiser: () => Double
 ) {
   require(crossoverRate >= 0 && crossoverRate <= 1)
   require(mutationRate >= 0 && mutationRate <= 1)
 
   def runGeneration(state: SimulationState): GenerationResults = {
-    val results = state.population.map(d => ChromosomeResult(d, fitnessFunction.apply(d)))
+    val results = state.population.map(d => ChromosomeResult(d, fitness.calculate(d)))
     GenerationResults(
       results,
       SimulationState(nextPopulation(state, results))
     )
   }
+
+  def maxFitness: Double = fitness.max
 
   private def nextPopulation(state: SimulationState, results: Traversable[ChromosomeResult]): Traversable[Chromosome] = {
     if (state.population.size <= 1) {
@@ -36,38 +38,31 @@ class SimulationEnvironment(
     if (current.size == targetSize) {
       current
     } else {
-      reproduce(current ++ tryToReproduce(results), targetSize, results)
+      reproduce(current ++ Traversable(reproduce(results)), targetSize, results)
     }
   }
 
-  private def tryToReproduce(results: Traversable[ChromosomeResult]): Option[Chromosome] = {
+  private def reproduce(results: Traversable[ChromosomeResult]): Chromosome = {
     val resultsList = results.toList
     val parent1 = chooseParent(resultsList)
     val split = resultsList.span(_.chromosome != parent1)
     val newFrom = split._1 ::: split._2.tail
     assert(newFrom.size == resultsList.size - 1)
     val parent2 = chooseParent(newFrom)
-    tryToReproduce(parent1, parent2)
-  }
 
-  private def tryToReproduce(parent1: Chromosome, parent2: Chromosome): Option[Chromosome] = {
-    if (randomiser.apply() > crossoverRate) {
-      None
-    } else {
-      Some(mutate(crossover(parent1, parent2)))
-    }
+    mutate(crossover(parent1, parent2))
   }
 
   private def crossover(parent1: Chromosome, parent2: Chromosome): Chromosome = {
-    val positionRatio = randomiser.apply()
-    if (positionRatio < 0.25) {
-      parent2
-    } else if (positionRatio < 0.5) {
-      Chromosome(parent1.xGene, parent2.yGene, parent2.radiusGene)
-    } else if (positionRatio < 0.75) {
-      Chromosome(parent1.xGene, parent1.yGene, parent2.radiusGene)
-    } else {
+    if (randomiser.apply() > crossoverRate) {
       parent1
+    } else {
+      val positionRatio = randomiser.apply()
+      if (positionRatio < 0.5) {
+        Chromosome(parent1.xGene, parent2.yGene, parent2.radiusGene)
+      } else {
+        Chromosome(parent1.xGene, parent1.yGene, parent2.radiusGene)
+      }
     }
   }
 

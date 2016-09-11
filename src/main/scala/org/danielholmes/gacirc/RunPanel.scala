@@ -78,38 +78,42 @@ class RunPanel(surface: Surface, env: SimulationEnvironment, initialState: Simul
     }
 
     private def paintResults(g: Graphics2D): Unit = {
-      currentResults.map(_.chromosomeResults).foreach(r => paintChromosomeResults(r.toList, g))
+      currentResults.map(_.chromosomeResults)
+        .foreach(r => {
+          val fittest = r.map(_.fitness).max
+          paintChromosomeResults(r.toList.sortBy(_.fitness), fittest, g)
+        })
     }
 
     @tailrec
-    private def paintChromosomeResults(disks: List[ChromosomeResult], g: Graphics2D): Unit = {
+    private def paintChromosomeResults(disks: List[ChromosomeResult], fittest: Double, g: Graphics2D): Unit = {
       disks match {
         case Nil =>
         case x :: xs =>
-          paintChromosomeResult(x, g)
-          paintChromosomeResults(xs, g)
+          paintChromosomeResult(x, fittest, g)
+          paintChromosomeResults(xs, fittest, g)
       }
     }
 
-    private def getResultColor(result: ChromosomeResult): Color = {
+    private def getResultColor(result: ChromosomeResult, fittest: Double): Color = {
       val MIN_ALPHA = 30
-      if (result.fitness == 0.0) {
-        new Color(0, 0, 255, MIN_ALPHA)
+      if (result.fitness == fittest) {
+        new Color(0, 255, 0, 255)
+      } else if (result.fitness == 0.0) {
+          new Color(0, 0, 255, MIN_ALPHA)
       } else {
-        // TODO: Better reference for fitness max
         val MAX_ALPHA = 230
-        val MAX_FITNESS = Math.min(surface.width, surface.height) / 2
         new Color(
           255, 0, 0,
           Math.round(
-            MIN_ALPHA + ((result.fitness / MAX_FITNESS) * (MAX_ALPHA - MIN_ALPHA))
+            MIN_ALPHA + ((result.fitness / env.maxFitness) * (MAX_ALPHA - MIN_ALPHA))
           ).toInt
         )
       }
     }
 
-    private def paintChromosomeResult(result: ChromosomeResult, g: Graphics2D): Unit = {
-      g.setColor(getResultColor(result))
+    private def paintChromosomeResult(result: ChromosomeResult, fittest: Double, g: Graphics2D): Unit = {
+      g.setColor(getResultColor(result, fittest))
       g.drawOval(
         (result.chromosome.xGene.value - result.chromosome.radiusGene.value).toInt,
         (result.chromosome.yGene.value - result.chromosome.radiusGene.value).toInt,
